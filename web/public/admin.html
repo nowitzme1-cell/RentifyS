@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rentify Admin Panel - Kashmore HQ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/app.css">
+    <style>
+        body { background: #0F0F0F; color: #FFF; padding-bottom: 20px; }
+        .admin-wrap { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #27272A; }
+        .stat-card-admin { background: #18181B; border: 1px solid #27272A; border-radius: 20px; padding: 20px; text-align: center; }
+        .stat-val { font-size: 28px; font-weight: 800; margin-top: 4px; color: #FFF; }
+        .admin-table-card { background: #18181B; border: 1px solid #27272A; border-radius: 20px; padding: 20px; margin-top: 24px; }
+        .tab-btn { background: #27272A; color: #A1A1AA; border: none; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .tab-btn.active { background: #FFFFFF; color: #0F0F0F; }
+    </style>
+</head>
+<body>
+    <div class="admin-wrap">
+        <div class="admin-header">
+            <div>
+                <a href="/" class="logo" style="color:#FFF;">rentify<span class="dot">. admin</span></a>
+                <p style="font-size:12px; color:#A1A1AA; margin-top:4px;">Kashmore HQ Secret Control Panel</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <a href="/" class="btn btn-secondary btn-sm" style="background:#27272A; color:#FFF; border:none;">← Client App</a>
+                <a href="/download/rentify.zip" class="btn btn-primary btn-sm" style="background:#635BFF;">⬇️ Download rentify.zip</a>
+            </div>
+        </div>
+
+        <!-- 4 Stats Cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+            <div class="stat-card-admin">
+                <div style="font-size:12px; color:#A1A1AA;">Total Items</div>
+                <div class="stat-val" id="statItems">10</div>
+            </div>
+            <div class="stat-card-admin" style="border-color:#EF4444;">
+                <div style="font-size:12px; color:#EF4444;">Pending Moderation</div>
+                <div class="stat-val" id="statPending" style="color:#EF4444;">0</div>
+            </div>
+            <div class="stat-card-admin">
+                <div style="font-size:12px; color:#A1A1AA;">Members</div>
+                <div class="stat-val" id="statUsers">18</div>
+            </div>
+            <div class="stat-card-admin" style="border-color:#166534;">
+                <div style="font-size:12px; color:#4ADE80;">10% Commission Revenue</div>
+                <div class="stat-val" id="statCommission" style="color:#4ADE80;">Rs. 15,800</div>
+            </div>
+        </div>
+
+        <!-- Moderation Tables -->
+        <div class="admin-table-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size:16px; font-weight:700;">Marketplace Listings Moderation</h3>
+                <div style="display:flex; gap:6px;">
+                    <button class="tab-btn active" onclick="filterAdminItems('All', this)">All</button>
+                    <button class="tab-btn" onclick="filterAdminItems('Pending', this)">Pending</button>
+                    <button class="tab-btn" onclick="filterAdminItems('Approved', this)">Approved</button>
+                </div>
+            </div>
+
+            <div id="adminItemsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+
+        <!-- CNIC Verifications -->
+        <div class="admin-table-card">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">NADRA CNIC Blue Tick Approvals</h3>
+            <div id="adminVerificationsList" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let adminData = { items: [], requests: [], verifications: [] };
+
+        document.addEventListener('DOMContentLoaded', loadAdminData);
+
+        async function loadAdminData() {
+            try {
+                const res = await fetch('/api/admin/data');
+                const json = await res.json();
+                if (json.status === 'success') {
+                    adminData = json.data;
+                    document.getElementById('statItems').textContent = adminData.stats.total_items;
+                    document.getElementById('statPending').textContent = adminData.stats.pending_items;
+                    document.getElementById('statUsers').textContent = adminData.stats.users_count;
+                    document.getElementById('statCommission').textContent = 'Rs. ' + adminData.stats.commission_revenue.toLocaleString();
+
+                    renderAdminItems(adminData.items);
+                    renderAdminVerifications(adminData.verifications);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function filterAdminItems(status, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (status === 'All') {
+                renderAdminItems(adminData.items);
+            } else {
+                renderAdminItems(adminData.items.filter(i => i.status.toLowerCase() === status.toLowerCase()));
+            }
+        }
+
+        function renderAdminItems(items) {
+            const wrap = document.getElementById('adminItemsList');
+            wrap.innerHTML = items.map(it => `
+                <div style="background:#27272A; border-radius:14px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <img src="${it.image_url}" style="width:48px; height:48px; border-radius:10px; object-fit:cover;">
+                        <div>
+                            <div style="font-size:14px; font-weight:700;">${it.title}</div>
+                            <div style="font-size:12px; color:#A1A1AA;">Rs. ${it.price_per_day.toLocaleString()}/d • ${it.category} • 📍 ${it.city} • Owner: ${it.owner_name}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span class="status-pill status-${it.status}">${it.status}</span>
+                        ${it.status === 'pending' ? `
+                            <button class="btn btn-primary btn-sm" onclick="setAdminItemStatus(${it.id}, 'approved')" style="background:#22C55E; color:#FFF;">Approve</button>
+                            <button class="btn btn-secondary btn-sm" onclick="setAdminItemStatus(${it.id}, 'rejected')" style="background:#EF4444; color:#FFF; border:none;">Reject</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminVerifications(vers) {
+            const wrap = document.getElementById('adminVerificationsList');
+            wrap.innerHTML = vers.map(v => `
+                <div style="background:#27272A; border-radius:14px; padding:16px;">
+                    <div style="font-size:15px; font-weight:700;">${v.user_name}</div>
+                    <div style="font-size:12px; color:#A1A1AA; margin:6px 0;">CNIC: ${v.cnic_number} • 📍 ${v.city}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+                        <span class="status-pill status-${v.status}">${v.status}</span>
+                        ${v.status === 'pending' ? `
+                            <button class="btn btn-primary btn-sm" onclick="approveUserCNIC(${v.id})" style="background:#0095F6; color:#FFF;">Approve Blue Tick</button>
+                        ` : '<span style="color:#0095F6; font-size:12px; font-weight:700;">✓ Blue Tick Active</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function setAdminItemStatus(id, status) {
+            await fetch('/api/admin/item_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, status: status })
+            });
+            loadAdminData();
+        }
+
+        async function approveUserCNIC(id) {
+            await fetch('/api/admin/verify_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            });
+            loadAdminData();
+        }
+    </script>
+</body>
+</html>
