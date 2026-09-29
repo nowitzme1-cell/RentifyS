@@ -1,0 +1,6 @@
+{
+  "name": "Rentify",
+  "description": "Pakistan's First P2P Rental Marketplace. Rent cameras, ACs, cars, tools, generators, and wedding items easily in Kashmore and beyond.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
